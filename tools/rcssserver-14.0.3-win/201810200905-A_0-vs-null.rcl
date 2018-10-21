@@ -1,0 +1,6 @@
+0,2	Recv A_1: (init A (version 9) (goalie))
+0,2	Recv A_2: (init A (version 9) )
+0,2	Recv A_3: (init A (version 9) )
+0,2	Recv A_1: (bye)
+0,3	Recv A_2: (bye)
+0,6	Recv A_3: (bye)

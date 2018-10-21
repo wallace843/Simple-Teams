@@ -1,0 +1,8 @@
+0,14	Recv B_1: (init B (version 9) (goalie))
+0,14	Recv A_1: (init A (version 9) (goalie))
+0,16	Recv B_1: (move -70.0 0.0)
+0,16	Recv A_1: (move -70.0 0.0)
+0,16	Recv A_2: (init A (version 9) )
+0,16	Recv B_2: (init B (version 9) )
+0,18	Recv B_2: (move -60.0 10.0)
+0,18	Recv A_2: (move -60.0 10.0)

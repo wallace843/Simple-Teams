@@ -1,0 +1,8 @@
+0,0	Recv bolsonaros_1: (init bolsonaros (version 9) (goalie))
+0,0	Recv outros_1: (init outros (version 9) (goalie))
+0,0	Recv outros_2: (init outros (version 9) )
+0,0	Recv bolsonaros_2: (init bolsonaros (version 9) )
+0,0	Recv outros_2: (bye)
+0,0	Recv bolsonaros_2: (bye)
+0,0	Recv bolsonaros_1: (bye)
+0,0	Recv outros_1: (bye)
