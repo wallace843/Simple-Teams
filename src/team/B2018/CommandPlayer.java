@@ -1,5 +1,6 @@
 package team.B2018;
 
+import java.awt.Rectangle;
 import java.util.ArrayList;
 
 import simple_soccer_lib.PlayerCommander;
@@ -31,19 +32,19 @@ public class CommandPlayer extends Thread {
 					acaoGoleiro(nextIteration);
 					break ;
 				case 2:
-					acaoArmador(nextIteration, 2);
+					acaoDefensor(nextIteration, 1);
 					break ;
 				case 3:
-					acaoDefensor(nextIteration, 3);
+					acaoDefensor(nextIteration, -1);
 					break ;
 				case 4:
-					acaoDefensor(nextIteration, 4);
+					acaoArmador(nextIteration, -1);
 					break ;
 				case 5:
-					acaoArmador(nextIteration, 5);
+					acaoArmador(nextIteration, 0);
 					break ;
 				case 6:
-					acaoArmador(nextIteration, 6);
+					acaoArmador(nextIteration, 1);
 					break ;
 				case 7:
 					acaoFixo(nextIteration);
@@ -56,18 +57,47 @@ public class CommandPlayer extends Thread {
 	
 	private void acaoArmador(long nextIteration, int pos) {
 		EFieldSide side = selfPerc.getSide();
+		EFieldSide sideAdv;
+		Vector2D golAdv;
+		if(side == EFieldSide.LEFT) {
+			sideAdv = EFieldSide.RIGHT;
+			golAdv = new Vector2D(50d,0d);
+		}
+		else {
+			sideAdv = EFieldSide.LEFT;
+			golAdv = new Vector2D(-50d,0d);
+		}
 		Vector2D ballPos;
 		while(true) {
 			updatePerceptions();
 			ballPos = fieldPerc.getBall().getPosition();
 			switch(matchPerc.getState()) {
 			case BEFORE_KICK_OFF:
-				if(pos == 2)
-					commander.doMoveBlocking(-25d, -30d);
-				else if(pos == 5)
-					commander.doMoveBlocking(-25d, 30d);
-				else if(pos == 6)
-					commander.doMoveBlocking(-20d, 0d);
+				commander.doMoveBlocking(-25d, 25d*pos);
+				break;
+			case KICK_OFF_LEFT:
+				commander.doMoveBlocking(-25d, 25d*pos);
+				break;
+			case KICK_OFF_RIGHT:
+				commander.doMoveBlocking(-25d, 25d*pos);
+				break;
+			case PLAY_ON:
+				if(isPointsAreClose(selfPerc.getPosition(), fieldPerc.getBall().getPosition(), 1d)) {
+					if(distanceOfPoints(selfPerc.getPosition(), golAdv) < 100) {
+						chutarGol(golAdv);
+					}
+					else if(distanceOfPoints(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), sideAdv).getPosition(), fieldPerc.getBall().getPosition()) > 5) {
+						kickToPoint(golAdv, 20d);
+					}
+					else {
+						passarBola(selfPerc.getPosition(), fieldPerc.getTeamPlayer(side, 2).getPosition());
+					}
+				}else{
+					if(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), side).getUniformNumber() == selfPerc.getUniformNumber())
+						dash(fieldPerc.getBall().getPosition());
+					else
+						turnToPoint(fieldPerc.getBall().getPosition());
+				}
 				break;
 			default:
 				break;
@@ -83,10 +113,23 @@ public class CommandPlayer extends Thread {
 			ballPos = fieldPerc.getBall().getPosition();
 			switch(matchPerc.getState()) {
 			case BEFORE_KICK_OFF:
-				if(pos == 3)
-					commander.doMoveBlocking(-30d, -20d);
-				else if(pos == 4)
-					commander.doMoveBlocking(-30d, 20d);
+				commander.doMoveBlocking(-30d, -15d*pos);
+				break;
+			case KICK_OFF_LEFT:
+				commander.doMoveBlocking(-30d, -15d*pos);
+				break;
+			case KICK_OFF_RIGHT:
+				commander.doMoveBlocking(-30d, -15d*pos);
+				break;
+			case PLAY_ON:
+				if(isPointsAreClose(selfPerc.getPosition(), fieldPerc.getBall().getPosition(), 1d))
+					passarBola(selfPerc.getPosition(),fieldPerc.getTeamPlayer(side, 7).getPosition());
+				else{
+					if(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), side).getUniformNumber() == selfPerc.getUniformNumber())
+						dash(fieldPerc.getBall().getPosition());
+					else
+						turnToPoint(fieldPerc.getBall().getPosition());
+				}
 				break;
 			default:
 				break;
@@ -96,16 +139,45 @@ public class CommandPlayer extends Thread {
 	
 	private void acaoFixo(long nextIteration) {
 		EFieldSide side = selfPerc.getSide();
+		EFieldSide sideAdv = side == EFieldSide.LEFT ? EFieldSide.RIGHT:EFieldSide.LEFT;
 		Vector2D ballPos;
 		while(true) {
 			updatePerceptions();
 			ballPos = fieldPerc.getBall().getPosition();
 			switch(matchPerc.getState()) {
 			case BEFORE_KICK_OFF:
-				commander.doMoveBlocking(-1d, -0d);
+				commander.doMoveBlocking(-0.5d, 0d);
+				Vector2D newDirection = fieldPerc.getTeamPlayer(side, 5).getPosition().sub(selfPerc.getPosition());
+				commander.doTurnToDirectionBlocking(newDirection);
 				break;
 			case KICK_OFF_LEFT:
-				passe(fieldPerc.getTeamPlayer(side, 6).getPosition());
+				commander.doMoveBlocking(-0.5d, 0d);
+				commander.doKickBlocking(100, 0);
+				break;
+			case KICK_OFF_RIGHT:
+				commander.doMoveBlocking(-0.5d, 0d);
+				commander.doKickBlocking(100, 0);
+				break;
+			case PLAY_ON:
+				//Se a minha distancia para bola for 1
+				if(isPointsAreClose(selfPerc.getPosition(), fieldPerc.getBall().getPosition(), 1d)) {
+					//Se o jogador adversario mais proximo da bola estiver a mais de cinco metros, dou um toque curto na bola
+					if(distanceOfPoints(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), sideAdv).getPosition(), fieldPerc.getBall().getPosition()) > 5) {
+						if(side == EFieldSide.LEFT)
+							kickToPoint(new Vector2D(50d,0d), 20d);
+						else
+							kickToPoint(new Vector2D(-50d,0d), 20d);
+					}
+					else {
+						passarBola(selfPerc.getPosition(), fieldPerc.getTeamPlayer(side, 5).getPosition());
+					}
+				}else{
+					if(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), side).getUniformNumber() == selfPerc.getUniformNumber())
+						dash(fieldPerc.getBall().getPosition());
+					else
+						turnToPoint(fieldPerc.getBall().getPosition());
+				}
+				break;
 			default:
 				break;
 			}
@@ -114,6 +186,8 @@ public class CommandPlayer extends Thread {
 	
 	private void acaoGoleiro(long nextIteration) {
 		EFieldSide side = selfPerc.getSide();
+		EFieldSide sideAdv = side == EFieldSide.LEFT ? EFieldSide.RIGHT:EFieldSide.LEFT;
+		Rectangle area = side == EFieldSide. LEFT ?	new Rectangle(-52, -20, 16, 40):new Rectangle(36, -20, 16, 40);
 		Vector2D ballPos;
 		while(true) {
 			updatePerceptions();
@@ -122,6 +196,23 @@ public class CommandPlayer extends Thread {
 			case BEFORE_KICK_OFF:
 				commander.doMoveBlocking(-50d, 0d);
 				break;
+			case KICK_OFF_LEFT:
+				commander.doMoveBlocking(-50d, 0d);
+				break;
+			case KICK_OFF_RIGHT:
+				commander.doMoveBlocking(-50d, 0d);
+				break;
+			case PLAY_ON:
+				if(isPointsAreClose(selfPerc.getPosition(), fieldPerc.getBall().getPosition(), 1d))
+					kickToPoint(new Vector2D(0,0), 140);
+				else{
+					if(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), side).getUniformNumber() == selfPerc.getUniformNumber())
+						dash(fieldPerc.getBall().getPosition());
+					else
+						turnToPoint(fieldPerc.getBall().getPosition());
+				}
+				break;
+			
 			default:
 				break;
 			}
@@ -140,26 +231,27 @@ public class CommandPlayer extends Thread {
 			this.matchPerc = newMatch;
 	}
 	
-	private void passe(Vector2D point){
+	//Acoes Basicas
+	private void kickToPoint(Vector2D point, double intensity){
 		Vector2D newDirection = point.sub(selfPerc.getPosition());
-		commander.doTurnToDirectionBlocking(newDirection);
-		commander.doKickBlocking(130, 0);
+		double angle = newDirection.angleFrom(selfPerc.getDirection());
+		if (angle > 45 || angle < -45){
+			commander.doTurnToDirectionBlocking(newDirection);
+			commander.doKickBlocking(10d, 0d);
+		}else
+			commander.doKickBlocking(intensity, angle);
 	}
 	
-	private PlayerPerception getClosestPlayerPoint(Vector2D point, EFieldSide side, double margin){
+	private PlayerPerception getClosestPlayerPoint(Vector2D point, EFieldSide side){
 		ArrayList<PlayerPerception> lp = fieldPerc.getTeamPlayers(side);
 		PlayerPerception np = null ;
 		if (lp != null && !lp.isEmpty()){
 			double dist,temp;
 			dist = lp.get(0).getPosition().distanceTo(point);
 			np = lp.get(0);
-			if (isPointsAreClose(np.getPosition(), point, margin))
-				return np;
 			for (PlayerPerception p : lp) {
 				if (p.getPosition() == null ) 
 					break ;
-				if (isPointsAreClose(p.getPosition(), point, margin))
-					return p;
 				temp = p.getPosition().distanceTo(point);
 				if (temp < dist){
 					dist = temp;
@@ -168,6 +260,10 @@ public class CommandPlayer extends Thread {
 			}
 		}
 		return np;
+	}
+	
+	private double distanceOfPoints(Vector2D point1, Vector2D point2) {
+		return point1.distanceTo(point2);
 	}
 	
 	private boolean isPointsAreClose(Vector2D reference, Vector2D point, double margin){
@@ -190,5 +286,22 @@ public class CommandPlayer extends Thread {
 	private boolean isAlignToPoint(Vector2D point, double margin){
 		double angle = point.sub(selfPerc.getPosition()).angleFrom(selfPerc.getDirection());
 		return angle < margin && angle > margin*(-1);
+	}
+	
+	//Jogadas
+	private void passarBola(Vector2D origem, Vector2D destino) {
+		double distancia = origem.distanceTo(destino);
+		double intensidade = Math.sqrt(190d*distancia);
+		kickToPoint(destino, intensidade);
+	}
+	
+	private void chutarGol(Vector2D golAdv) {
+		Vector2D newDirection = golAdv.sub(selfPerc.getPosition());
+		double angle = newDirection.angleFrom(selfPerc.getDirection());
+		if (angle > 45 || angle < -45){
+			commander.doTurnToDirectionBlocking(newDirection);
+			commander.doKickBlocking(10d, 0d);
+		}else
+			commander.doKickBlocking(150, angle);
 	}
 }
