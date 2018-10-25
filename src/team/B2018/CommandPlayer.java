@@ -2,6 +2,7 @@ package team.B2018;
 
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.Random;
 
 import simple_soccer_lib.PlayerCommander;
 import simple_soccer_lib.perception.FieldPerception;
@@ -59,6 +60,8 @@ public class CommandPlayer extends Thread {
 		EFieldSide side = selfPerc.getSide();
 		EFieldSide sideAdv;
 		Vector2D golAdv;
+		
+		//Definicao do local do lado e gol adversario
 		if(side == EFieldSide.LEFT) {
 			sideAdv = EFieldSide.RIGHT;
 			golAdv = new Vector2D(50d,0d);
@@ -67,14 +70,17 @@ public class CommandPlayer extends Thread {
 			sideAdv = EFieldSide.LEFT;
 			golAdv = new Vector2D(-50d,0d);
 		}
+		
 		Vector2D ballPos;
 		while(true) {
 			updatePerceptions();
 			ballPos = fieldPerc.getBall().getPosition();
 			switch(matchPerc.getState()) {
 			case BEFORE_KICK_OFF:
+				//Posicao inicial antes do inicio da partida
 				commander.doMoveBlocking(-25d, 25d*pos);
 				break;
+				
 			case KICK_OFF_LEFT:
 				commander.doMoveBlocking(-25d, 25d*pos);
 				break;
@@ -82,19 +88,33 @@ public class CommandPlayer extends Thread {
 				commander.doMoveBlocking(-25d, 25d*pos);
 				break;
 			case PLAY_ON:
+				
+				//Se o jogador estiver a distancia de 1 perto da bola
 				if(isPointsAreClose(selfPerc.getPosition(), fieldPerc.getBall().getPosition(), 1d)) {
-					if(distanceOfPoints(selfPerc.getPosition(), golAdv) < 100) {
+					
+					//Se o jogador estiver a distancia menor que 30 do gol adversario
+					if(distanceOfPoints(selfPerc.getPosition(), golAdv) < 30) {
 						chutarGol(golAdv);
 					}
+					
+					//Se o jogador adversairo mais proximo estiver a mais de 5 de distancia
 					else if(distanceOfPoints(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), sideAdv).getPosition(), fieldPerc.getBall().getPosition()) > 5) {
 						kickToPoint(golAdv, 20d);
 					}
+					
+					//Toca pra alguem do time
 					else {
-						passarBola(selfPerc.getPosition(), fieldPerc.getTeamPlayer(side, 2).getPosition());
+						passarBola(selfPerc.getPosition(), fieldPerc.getTeamPlayer(side, outroNumero(selfPerc.getUniformNumber())).getPosition());
 					}
+				
+				//Se o jogador estiver longe da bola
 				}else{
+					
+					//Se eu for jogador do meu time mais perto da bola corro atras da bola
 					if(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), side).getUniformNumber() == selfPerc.getUniformNumber())
 						dash(fieldPerc.getBall().getPosition());
+					
+					//Se nao olho para bola
 					else
 						turnToPoint(fieldPerc.getBall().getPosition());
 				}
@@ -123,7 +143,7 @@ public class CommandPlayer extends Thread {
 				break;
 			case PLAY_ON:
 				if(isPointsAreClose(selfPerc.getPosition(), fieldPerc.getBall().getPosition(), 1d))
-					passarBola(selfPerc.getPosition(),fieldPerc.getTeamPlayer(side, 7).getPosition());
+					passarBola(selfPerc.getPosition(),fieldPerc.getTeamPlayer(side, outroNumero(selfPerc.getUniformNumber())).getPosition());
 				else{
 					if(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), side).getUniformNumber() == selfPerc.getUniformNumber())
 						dash(fieldPerc.getBall().getPosition());
@@ -169,7 +189,7 @@ public class CommandPlayer extends Thread {
 							kickToPoint(new Vector2D(-50d,0d), 20d);
 					}
 					else {
-						passarBola(selfPerc.getPosition(), fieldPerc.getTeamPlayer(side, 5).getPosition());
+						passarBola(selfPerc.getPosition(), fieldPerc.getTeamPlayer(side, outroNumero(selfPerc.getUniformNumber())).getPosition());
 					}
 				}else{
 					if(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), side).getUniformNumber() == selfPerc.getUniformNumber())
@@ -188,6 +208,7 @@ public class CommandPlayer extends Thread {
 		EFieldSide side = selfPerc.getSide();
 		EFieldSide sideAdv = side == EFieldSide.LEFT ? EFieldSide.RIGHT:EFieldSide.LEFT;
 		Rectangle area = side == EFieldSide. LEFT ?	new Rectangle(-52, -20, 16, 40):new Rectangle(36, -20, 16, 40);
+		Vector2D gol = side == EFieldSide.LEFT? new Vector2D(-50d,0d):new Vector2D(50d,0d);
 		Vector2D ballPos;
 		while(true) {
 			updatePerceptions();
@@ -204,10 +225,12 @@ public class CommandPlayer extends Thread {
 				break;
 			case PLAY_ON:
 				if(isPointsAreClose(selfPerc.getPosition(), fieldPerc.getBall().getPosition(), 1d))
-					kickToPoint(new Vector2D(0,0), 140);
+					kickToPoint(new Vector2D(0,0), 200);
 				else{
 					if(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), side).getUniformNumber() == selfPerc.getUniformNumber())
 						dash(fieldPerc.getBall().getPosition());
+					else if(distanceOfPoints(selfPerc.getPosition(),gol ) > 1) 
+						dash(gol);
 					else
 						turnToPoint(fieldPerc.getBall().getPosition());
 				}
@@ -303,5 +326,16 @@ public class CommandPlayer extends Thread {
 			commander.doKickBlocking(10d, 0d);
 		}else
 			commander.doKickBlocking(150, angle);
+	}
+	
+	private int outroNumero(int meuNumero){
+		Random r = new Random();
+		int player = r.nextInt(6)+ 1;
+		
+		while(player == meuNumero) {
+			player = r.nextInt(6) + 1;
+		}
+		
+		return player;
 	}
 }
