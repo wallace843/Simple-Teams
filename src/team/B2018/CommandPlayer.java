@@ -128,6 +128,20 @@ public class CommandPlayer extends Thread {
 	private void acaoDefensor(long nextIteration, int pos) {
 		EFieldSide side = selfPerc.getSide();
 		Vector2D ballPos;
+		
+		EFieldSide sideAdv;
+		Vector2D golAdv;
+		
+		//Definicao do local do lado e gol adversario
+		if(side == EFieldSide.LEFT) {
+			sideAdv = EFieldSide.RIGHT;
+			golAdv = new Vector2D(50d,0d);
+		}
+		else {
+			sideAdv = EFieldSide.LEFT;
+			golAdv = new Vector2D(-50d,0d);
+		}
+		
 		while(true) {
 			updatePerceptions();
 			ballPos = fieldPerc.getBall().getPosition();
@@ -142,7 +156,11 @@ public class CommandPlayer extends Thread {
 				commander.doMoveBlocking(-30d, -15d*pos);
 				break;
 			case PLAY_ON:
-				if(isPointsAreClose(selfPerc.getPosition(), fieldPerc.getBall().getPosition(), 1d))
+				//Se o jogador estiver a distancia menor que 30 do gol adversario
+				if(distanceOfPoints(selfPerc.getPosition(), golAdv) < 30) {
+					chutarGol(golAdv);
+				}
+				else if(isPointsAreClose(selfPerc.getPosition(), fieldPerc.getBall().getPosition(), 1d))
 					passarBola(selfPerc.getPosition(),fieldPerc.getTeamPlayer(side, outroNumero(selfPerc.getUniformNumber())).getPosition());
 				else{
 					if(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), side).getUniformNumber() == selfPerc.getUniformNumber())
@@ -159,7 +177,20 @@ public class CommandPlayer extends Thread {
 	
 	private void acaoFixo(long nextIteration) {
 		EFieldSide side = selfPerc.getSide();
-		EFieldSide sideAdv = side == EFieldSide.LEFT ? EFieldSide.RIGHT:EFieldSide.LEFT;
+		
+		EFieldSide sideAdv;
+		Vector2D golAdv;
+		
+		//Definicao do local do lado e gol adversario
+		if(side == EFieldSide.LEFT) {
+			sideAdv = EFieldSide.RIGHT;
+			golAdv = new Vector2D(50d,0d);
+		}
+		else {
+			sideAdv = EFieldSide.LEFT;
+			golAdv = new Vector2D(-50d,0d);
+		}
+		
 		Vector2D ballPos;
 		while(true) {
 			updatePerceptions();
@@ -181,8 +212,12 @@ public class CommandPlayer extends Thread {
 			case PLAY_ON:
 				//Se a minha distancia para bola for 1
 				if(isPointsAreClose(selfPerc.getPosition(), fieldPerc.getBall().getPosition(), 1d)) {
-					//Se o jogador adversario mais proximo da bola estiver a mais de cinco metros, dou um toque curto na bola
-					if(distanceOfPoints(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), sideAdv).getPosition(), fieldPerc.getBall().getPosition()) > 5) {
+					
+					//Se o jogador estiver a distancia menor que 30 do gol adversario
+					if(distanceOfPoints(selfPerc.getPosition(), golAdv) < 30) {
+						chutarGol(golAdv);
+					}
+					else if(distanceOfPoints(getClosestPlayerPoint(fieldPerc.getBall().getPosition(), sideAdv).getPosition(), fieldPerc.getBall().getPosition()) > 5) {
 						if(side == EFieldSide.LEFT)
 							kickToPoint(new Vector2D(50d,0d), 20d);
 						else
@@ -330,12 +365,11 @@ public class CommandPlayer extends Thread {
 	
 	private int outroNumero(int meuNumero){
 		Random r = new Random();
-		int player = r.nextInt(6)+ 1;
+		int player = r.nextInt(6)+ 2;
 		
 		while(player == meuNumero) {
-			player = r.nextInt(6) + 1;
+			player = r.nextInt(6) + 2;
 		}
-		
 		return player;
 	}
 }
