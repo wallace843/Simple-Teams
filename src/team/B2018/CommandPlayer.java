@@ -259,6 +259,7 @@ public class CommandPlayer extends Thread {
 				commander.doMoveBlocking(-50d, 0d);
 				break;
 			case PLAY_ON:
+				getBallVelocity();
 				if(isPointsAreClose(selfPerc.getPosition(), fieldPerc.getBall().getPosition(), 1d))
 					kickToPoint(new Vector2D(0,0), 200);
 				else{
@@ -293,9 +294,8 @@ public class CommandPlayer extends Thread {
 	private void kickToPoint(Vector2D point, double intensity){
 		Vector2D newDirection = point.sub(selfPerc.getPosition());
 		double angle = newDirection.angleFrom(selfPerc.getDirection());
-		if (angle > 45 || angle < -45){
-			commander.doTurnToDirectionBlocking(newDirection);
-			commander.doKickBlocking(10d, 0d);
+		if (angle > 20 || angle < -20){
+			commander.doKick(4, angle);
 		}else
 			commander.doKickBlocking(intensity, angle);
 	}
@@ -349,7 +349,7 @@ public class CommandPlayer extends Thread {
 	//Jogadas
 	private void passarBola(Vector2D origem, Vector2D destino) {
 		double distancia = origem.distanceTo(destino);
-		double intensidade = Math.sqrt(190d*distancia);
+		double intensidade = Math.sqrt(210d*distancia);
 		kickToPoint(destino, intensidade);
 	}
 	
@@ -371,5 +371,20 @@ public class CommandPlayer extends Thread {
 			player = r.nextInt(6) + 2;
 		}
 		return player;
+	}
+	
+	private double getBallVelocity() {
+		Vector2D origem = fieldPerc.getBall().getPosition();
+		long intevalo = 1;
+		try {
+			sleep(intevalo);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		fieldPerc = commander.perceiveFieldBlocking();
+		Vector2D destino = fieldPerc.getBall().getPosition();
+		double velocity = destino.distanceTo(origem)/intevalo;
+		return velocity;
 	}
 }
